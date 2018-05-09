@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """The Python implementation of the gRPC stochastic gradient descent server client."""
 
 from __future__ import print_function
@@ -84,3 +85,6 @@ def run():
 
 if __name__ == '__main__':
     run()
+=======
+#client code
+>>>>>>> 9fc9a4c7503d13e75d376f0a612743d80c377649
