@@ -65,13 +65,16 @@ testingSet = std.dataPreprocessing(testingSet,hypPlace)
 
 # Initial vector to process the stochastic gradient descent :
 # random generated.
-w0 = {1:0.21,2:0.75,hypPlace:0.011}                  #one element, to start the computation
+w0 = {1:18.21,2:23.75,hypPlace:0.011}                  #one element, to start the computation
 normw0 = math.sqrt(std.sparse_dot(w0,w0))
 nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
 
 
 # Maximum number of epochs we allow.
-nbMaxCall = 50
+nbMaxCall = 200
+
+# The depreciation of the SVM norm cost
+l = 0.5
 
 
 
@@ -107,7 +110,8 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         self.trainingErrors = []
         # Error on the testing set, computed at each cycle of the server
         self.testingErrors = []
-
+        # Step of the descent
+        self.step = 8
 
 
 
@@ -139,11 +143,14 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         elif (request.poids == 'getw0'):
             vector = std.dict2str(w0)
         else :
-            vector = merge(self.vectors)
+            grad_vector = std.merge(self.vectors, nbClients)
+            grad_vector = std.sparse_mult(self.step,grad_vector)
+            vector = std.sparse_vsous(self.oldParam, grad_vector)
             diff = std.sparse_vsous(self.oldParam,vector)
             normDiff = math.sqrt(std.sparse_dot(diff,diff))
             normGradW = math.sqrt(std.sparse_dot(vector,vector))
-            if ((normDiff <= 10**(-3)) or (self.epoch > nbMaxCall) or (normGradW <= 10**(-3)*normw0)):
+            normPrecW = math.sqrt(std.sparse_dot(self.oldParam,self.oldParam))
+            if ((normDiff <= 10 ** (-3) * normPrecW) or (self.epoch > nbMaxCall) or (normGradW <= 10**(-3)*normw0)):
                 self.paramVector = vector
                 vector = 'stop'
             else:
@@ -205,6 +212,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             print('############################################################')
             print('')
             self.epoch += 1
+            self.step = self.step*0.9
         ############################### END OF PRINT ###########################
 
         ######################################################################
