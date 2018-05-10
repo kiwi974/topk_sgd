@@ -135,7 +135,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         elif (request.poids == 'getw0'):
             vector = std.dict2str(w0)
         else :
-            gradParam = std.merge(self.vectors, nbClients)
+            gradParam = std.mergeSGD(self.vectors)
             gradParam = std.sparse_mult(self.step,gradParam)
             vector = std.sparse_vsous(self.oldParam,gradParam)
             diff = std.sparse_vsous(self.oldParam,vector)

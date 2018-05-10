@@ -89,8 +89,8 @@ def take_out(spVec,hypPlace):
     return r
 
 
-# Merge all the sparse vectors in a list.
-def merge(vectors,nbClients):
+# Merge for the classic SGD version.
+def mergeSGD(vectors):
     vmoy = {}
     count = {}
     for spVec in vectors:
@@ -102,6 +102,27 @@ def merge(vectors,nbClients):
                 count[k] = 1
     vmoy = sparse_vdiv(vmoy,count)
     return vmoy
+
+
+
+# Merge for the SGD Topk version
+def mergeTopk(vectors):
+    merged = {}
+    count = {}
+    for l in vectors:
+        k = l[0]
+        v = l[1]
+        if (k in merged):
+            merged[k] += v
+        else:
+            merged[k] = v
+        if (k in count):
+            count[k] += 1
+        else:
+            count[k] = 1
+    merged = sparse_vdiv(merged,count)
+    return merged
+
 
 
 # Get the key of the biggest absolute value in a dictionary

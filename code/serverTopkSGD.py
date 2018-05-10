@@ -27,18 +27,6 @@ _ONE_DAY_IN_SECONDS = 24 * 60 * 60
 nbClients = 2
 
 
-def merge(vectors):
-    merged = {}
-    for l in vectors:
-        k = l[0]
-        v = l[1]
-        if (k in merged):
-            merged[k] += v
-        else:
-            merged[k] = v
-    return merged
-
-
 # Number of examples we want in our training set.
 nbExamples = 4000
 
@@ -139,7 +127,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             vector = std.dict2str(w0) + "<<||>>" + str(self.step)
         else:
             # Modification of the vector of parameters
-            gradParam = merge(self.vectors)
+            gradParam = std.mergeTopk(self.vectors)
             vector = std.sparse_vsous(self.oldParam,gradParam)
             # Checking of the stoping criterion
             diff = std.sparse_vsous(self.oldParam, vector)
@@ -166,6 +154,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         realComputation = (request.poids != 'pret') and (request.poids != 'getw0') and (vector != 'stop')
 
         if (realComputation):
+            print("!!!! vector = " + vector)
             self.oldParam = std.str2dict(vector.split("<<||>>")[0])
 
         ######################################################################
