@@ -81,9 +81,10 @@ def guide_get_feature(stub):
         vect.poids = param2Modify
 
         vect = stub.GetFeature(route_guide_pb2.Vector(poids=vect.poids))
-        info = vect.poids.split("<<||>>")
-        vect.poids = info[0]
-        step = float(info[1])
+        if (vect.poids != 'stop'):
+            info = vect.poids.split("<<||>>")
+            vect.poids = info[0]
+            step = float(info[1])
 
         it += 1
 

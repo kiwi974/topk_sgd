@@ -81,7 +81,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # A list to store all the vectors sent by each client at each epoch.
         self.vectors = []
         # The current epoch (0 -> send the data to the clients).
-        self.epoch = 0
+        self.epoch = -1
         # The previous vecor of parameters : the last that had been sent.
         self.oldParam = w0
         # The name of one of the thread executing GetFeature : this one, and
@@ -153,8 +153,8 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
 
         realComputation = (request.poids != 'pret') and (request.poids != 'getw0') and (vector != 'stop')
 
+
         if (realComputation):
-            print("!!!! vector = " + vector)
             self.oldParam = std.str2dict(vector.split("<<||>>")[0])
 
         ######################################################################
