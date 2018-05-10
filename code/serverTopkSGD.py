@@ -136,7 +136,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         if (request.poids == 'pret'):
             vector = std.datadict2Sstr(trainingSet)
         elif (request.poids == 'getw0'):
-            vector = std.dict2str(w0)
+            vector = std.dict2str(w0) + "<<||>>" + str(self.step)
         else:
             # Modification of the vector of parameters
             gradParam = merge(self.vectors)
@@ -150,7 +150,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
                 self.paramVector = vector
                 vector = 'stop'
             else:
-                vector = std.dict2str(vector)
+                vector = std.dict2str(vector) + "<<||>>" + str(self.step)
 
         ######################################################################
 
@@ -166,7 +166,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         realComputation = (request.poids != 'pret') and (request.poids != 'getw0') and (vector != 'stop')
 
         if (realComputation):
-            self.oldParam = std.str2dict(vector)
+            self.oldParam = std.str2dict(vector.split("<<||>>")[0])
 
         ######################################################################
 

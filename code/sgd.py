@@ -193,7 +193,7 @@ def descent(data,w,numSamples,step,l,hypPlace):
     d = der_error(w,l,dataSample,sampleSize,hypPlace)
 
     # Modification of the parameter vector w.
-    w = std.sparse_vsous(w,std.sparse_mult(step,d))
+    #w = std.sparse_vsous(w,std.sparse_mult(step,d))
 
     return w
 

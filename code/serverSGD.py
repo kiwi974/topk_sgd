@@ -29,14 +29,6 @@ nbClients = 2
 
 
 
-def merge(vectors):
-    vmoy = {}
-    for spVec in vectors:
-        vmoy = std.sparse_vsum(vmoy,spVec)
-    vmoy = std.sparse_mult(1./nbClients,vmoy)
-    return vmoy
-
-
 # Number of examples we want in our training set.
 nbExamples = 4000
 
@@ -65,7 +57,7 @@ testingSet = std.dataPreprocessing(testingSet,hypPlace)
 
 # Initial vector to process the stochastic gradient descent :
 # random generated.
-w0 = {1:18.21,2:23.75,hypPlace:0.011}                  #one element, to start the computation
+w0 = {1:8.21,2:3.75,hypPlace:0.011}                  #one element, to start the computation
 normw0 = math.sqrt(std.sparse_dot(w0,w0))
 nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
 
@@ -111,7 +103,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # Error on the testing set, computed at each cycle of the server
         self.testingErrors = []
         # Step of the descent
-        self.step = 8
+        self.step = 3
 
 
 
@@ -143,14 +135,14 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         elif (request.poids == 'getw0'):
             vector = std.dict2str(w0)
         else :
-            grad_vector = std.merge(self.vectors, nbClients)
-            grad_vector = std.sparse_mult(self.step,grad_vector)
-            vector = std.sparse_vsous(self.oldParam, grad_vector)
+            gradParam = std.merge(self.vectors, nbClients)
+            gradParam = std.sparse_mult(self.step,gradParam)
+            vector = std.sparse_vsous(self.oldParam,gradParam)
             diff = std.sparse_vsous(self.oldParam,vector)
             normDiff = math.sqrt(std.sparse_dot(diff,diff))
             normGradW = math.sqrt(std.sparse_dot(vector,vector))
             normPrecW = math.sqrt(std.sparse_dot(self.oldParam,self.oldParam))
-            if ((normDiff <= 10 ** (-3) * normPrecW) or (self.epoch > nbMaxCall) or (normGradW <= 10**(-3)*normw0)):
+            if ((normDiff <= 10 ** (-8) * normPrecW) or (self.epoch > nbMaxCall) or (normGradW <= 10**(-8)*normw0)):
                 self.paramVector = vector
                 vector = 'stop'
             else:

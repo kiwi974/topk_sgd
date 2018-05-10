@@ -48,12 +48,12 @@ def guide_get_feature(stub):
 
     # This second call serves to get the departure vector.
     vect = stub.GetFeature(route_guide_pb2.Vector(poids="getw0"))
+    info = vect.poids.split("<<||>>")
+    vect.poids = info[0]
+    step = float(info[1])
 
     # The depreciation of the SVM norm cost
     l = 0.5
-
-    # The constant step to perform the gradient descent on the learning training.
-    step = 0.05
 
     # Vector of the rests
     m = {}
@@ -79,10 +79,14 @@ def guide_get_feature(stub):
         # The result is sent to the server.
         param2Modify = str(k) + "<||>" + str(g)
         vect.poids = param2Modify
+
         vect = stub.GetFeature(route_guide_pb2.Vector(poids=vect.poids))
+        info = vect.poids.split("<<||>>")
+        vect.poids = info[0]
+        step = float(info[1])
 
         it += 1
-        #time.sleep(1)
+
     print(vect)
 
 

@@ -92,9 +92,15 @@ def take_out(spVec,hypPlace):
 # Merge all the sparse vectors in a list.
 def merge(vectors,nbClients):
     vmoy = {}
+    count = {}
     for spVec in vectors:
         vmoy = sparse_vsum(vmoy, spVec)
-    vmoy = sparse_mult(1. / nbClients, vmoy)
+        for k in spVec.keys():
+            if k in count:
+                count[k] += 1
+            else:
+                count[k] = 1
+    vmoy = sparse_vdiv(vmoy,count)
     return vmoy
 
 

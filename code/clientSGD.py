@@ -67,7 +67,7 @@ def guide_get_feature(stub):
         vect = stub.GetFeature(route_guide_pb2.Vector(poids=vect.poids))
 
         it += 1
-        #time.sleep(1)
+
     print(vect)
 
 
