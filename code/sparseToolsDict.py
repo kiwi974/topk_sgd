@@ -98,6 +98,12 @@ def merge(vectors,nbClients):
     return vmoy
 
 
+# Get the key of the biggest absolute value in a dictionary
+def infiniteNormInd(d):
+    maxkey = max(d, key = lambda y:abs(d[y]))
+    return maxkey
+
+
 ####################################################################
 # Each element of the training set is a list of the form :
 # List(label : int, example : List(float). In order to send and
