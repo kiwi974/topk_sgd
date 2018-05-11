@@ -52,9 +52,13 @@ def generateData(nbData):
         a = random.randint(0,50)/10
         b = random.randint(0,50)/10
         sign = random.random()
-        if (sign >= 0.5):
-            a = -a;
-            b = -b;
+        if (sign <= 0.25):
+            a = -a
+            b = -b
+        elif ((0.25 <= sign) & (sign <= 0.5)):
+            b = -b
+        elif ((0.5 <= sign) & (sign <= 0.75)):
+            a = -a
         genvect = {1:a,2:b}
         dist = abs((std.sparse_dot(u,genvect))/(math.sqrt(std.sparse_dot(u,u))))
         valide = (d==0) or ((d!=0) & (dist >= d))

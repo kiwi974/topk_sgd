@@ -130,6 +130,10 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # all the vectors we got from the clients or the message 'stop' the
         # signal to the client that we converged.
 
+        normPrecW = 0
+        normGradW = 0
+        normDiff = 0
+
         if (request.poids == 'pret'):
             vector = std.datadict2Sstr(trainingSet)
         elif (request.poids == 'getw0'):

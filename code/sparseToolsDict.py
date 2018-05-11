@@ -307,10 +307,10 @@ def printTrace(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,tra
             plt.plot([-5, 5], [i1, i2], 'crimson')
             plt.show()
             print("We went out of the loop because : ")
-            if (normDiff <= 10 ** (-3) * normPrecW):
-                print("     normDiff <= 10 ** (-3) * normPrecW")
-            elif (normGradW <= 10 ** (-3) * normw0):
-                print("     normGradW <= 10 ** (-3) * normw0")
+            if (normDiff <= 10 ** (-8) * normPrecW):
+                print("     normDiff <= 10 ** (-8) * normPrecW")
+            elif (normGradW <= 10 ** (-8) * normw0):
+                print("     normGradW <= 10 ** (-8) * normw0")
             else:
                 print("     self.epoch > nbMaxCall")
         if (realComputation or (epoch == 1)):
