@@ -55,7 +55,7 @@ testingSet = std.dataPreprocessing(testingSet, hypPlace)
 
 # Initial vector to process the stochastic gradient descent :
 # random generated.
-w0 = {1: 18.21, 2: 23.75, hypPlace: 0.011}  # one element, to start the computation
+w0 = {1: 1.56, 2: 1.75, hypPlace: 0.011}  # one element, to start the computation
 normw0 = math.sqrt(std.sparse_dot(w0, w0))
 nbParameters = len(trainingSet[0]) - 1  # -1 because we don't count the label
 
@@ -186,6 +186,13 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
                     i2 = (-5 * w1 - b) / w2
                     plt.plot([-5, 5], [i1, i2], 'crimson')
                     plt.show()
+                    print("We went out of the loop because : ")
+                    if (normDiff <= 10 ** (-3) * normPrecW):
+                        print("     normDiff <= 10 ** (-3) * normPrecW")
+                    elif (normGradW <= 10 ** (-3) * normw0):
+                        print("     normGradW <= 10 ** (-3) * normw0")
+                    else:
+                        print("     self.epoch > nbMaxCall")
             if (realComputation or (self.epoch == 1)):
                 # Compute the error made with that vector of parameters on the testing set
                 self.testingErrors.append(sgd.error(self.oldParam, 0.1, testingSet, nbTestingData, hypPlace))

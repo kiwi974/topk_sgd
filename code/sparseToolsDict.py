@@ -3,7 +3,8 @@
 ########################################################################
 
 import math
-
+import matplotlib.pyplot as plt
+import sgd
 
 
 ########################################################################
@@ -272,3 +273,53 @@ def dataPreprocessing(data,hypPlace):
 
     return data
 
+
+
+
+
+
+############## PRINT THE TRACE IN THE SERVER #################
+
+def printTrace(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall):
+    print('')
+    print('############################################################')
+    if (epoch == 0):
+        print('# We sent the data to the clients.')
+    else:
+        print('# We performed the epoch : ' + str(epoch) + '.')
+        if (vector == "stop"):
+            print("# The vector that achieve the convergence is : " + str(paramVector))
+            # Plot the error on the training set
+            plt.figure(1)
+            plt.plot([i for i in range(epoch - 1)], testingErrors, 'b')
+            plt.plot([i for i in range(epoch - 1)], trainingErrors, 'r')
+            plt.show()
+            # Plot the training set and the hyperplan
+            plt.figure(2)
+            plt.scatter(trainaA, trainoA, s=10, c='r', marker='*')
+            plt.scatter(trainaB, trainoB, s=10, c='b', marker='o')
+            plt.plot([-5, 5], [5, -5], 'orange')
+            w1 = paramVector.get(1, 0)
+            w2 = paramVector.get(2, 0)
+            b = paramVector.get(hypPlace, 0)
+            i1 = (5 * w1 - b) / w2
+            i2 = (-5 * w1 - b) / w2
+            plt.plot([-5, 5], [i1, i2], 'crimson')
+            plt.show()
+            print("We went out of the loop because : ")
+            if (normDiff <= 10 ** (-3) * normPrecW):
+                print("     normDiff <= 10 ** (-3) * normPrecW")
+            elif (normGradW <= 10 ** (-3) * normw0):
+                print("     normGradW <= 10 ** (-3) * normw0")
+            else:
+                print("     self.epoch > nbMaxCall")
+        if (realComputation or (epoch == 1)):
+            # Compute the error made with that vector of parameters on the testing set
+            testingErrors.append(sgd.error(oldParam, 0.1, testingSet, nbTestingData, hypPlace))
+            trainingErrors.append(sgd.error(oldParam, 0.1, trainingSet, nbExamples, hypPlace))
+            print('# The merged vector is : ' + vector + '.')
+        if (epoch == nbMaxCall):
+            print('We performed the maximum number of iterations.')
+            print('The descent has been stopped.')
+        print('############################################################')
+        print('')

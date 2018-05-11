@@ -166,43 +166,12 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
 
         ######################################################################
 
-        ###################### PRINT OF THE CURRENT STATE ######################
+        ###################### ONE THREAD ONLY SECTION  ######################
+
         if (threading.current_thread().name == self.printerThreadName):
-            print('')
-            print('############################################################')
-            if (self.epoch == 0):
-                print('# We sent the data to the clients.')
-            else:
-                print('# We performed the epoch : ' + str(self.epoch) + '.')
-                if (vector == "stop"):
-                    print("# The vector that achieve the convergence is : " + str(self.paramVector))
-                    # Plot the error on the training set
-                    plt.figure(1)
-                    plt.plot([i for i in range(self.epoch-1)],self.testingErrors,'b')
-                    plt.plot([i for i in range(self.epoch-1)],self.trainingErrors,'r')
-                    plt.show()
-                    # Plot the training set and the hyperplan
-                    plt.figure(2)
-                    plt.scatter(trainaA,trainoA,s=10,c='r',marker='*')
-                    plt.scatter(trainaB,trainoB,s=10,c='b',marker='o')
-                    plt.plot([-5,5],[5,-5],'orange')
-                    w1 = self.paramVector.get(1,0)
-                    w2 = self.paramVector.get(2,0)
-                    b = self.paramVector.get(hypPlace,0)
-                    i1 = (5*w1-b)/w2
-                    i2 = (-5*w1-b)/w2
-                    plt.plot([-5,5],[i1,i2],'crimson')
-                    plt.show()
-            if (realComputation or (self.epoch == 1)):
-                # Compute the error made with that vector of parameters on the testing set
-                self.testingErrors.append(sgd.error(self.oldParam,0.1,testingSet,nbTestingData,hypPlace))
-                self.trainingErrors.append(sgd.error(self.oldParam,0.1,trainingSet,nbExamples,hypPlace))
-                print('# The merged vector is : ' + vector + '.')
-            if (self.epoch == nbMaxCall):
-                print('We performed the maximum number of iterations.')
-                print('The descent has been stopped.')
-            print('############################################################')
-            print('')
+            # Printing of the trace
+            std.printTrace(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                trainaB, trainoA, trainoB,hypPlace, normDiff, normGradW, normPrecW, normw0, realComputation,                         self.oldParam, trainingSet,testingSet, nbTestingData, nbExamples, nbMaxCall)
+            # Modification of the epoch and of the step
             self.epoch += 1
             self.step = self.step*0.9
         ############################### END OF PRINT ###########################
