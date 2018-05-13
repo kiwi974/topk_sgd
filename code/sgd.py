@@ -30,6 +30,19 @@ u = {1:1,2:1}
 
 def generateData(nbData):
 
+    # d is the double of the distance of each point in the square to the
+    # separator hyperplan.
+    d = 2
+
+    # u is a hyperplan's orthogonal vector.
+    u = {1: 1, 2: 1}
+    # d is the double of the distance of each point in the square to the
+    # separator hyperplan.
+    d = 2
+
+    # u is a hyperplan's orthogonal vector.
+    u = {1: 1, 2: 1}
+
     # A and B denote each a different class, respectively associated
     # to the labels 1 and -1.
     A = []
@@ -49,8 +62,8 @@ def generateData(nbData):
     cardB = 0
 
     while (nbExamples < nbData):
-        a = random.randint(0,50)/10
-        b = random.randint(0,50)/10
+        a = random.randint(0,100)/10
+        b = random.randint(0,100)/10
         sign = random.random()
         if (sign <= 0.25):
             a = -a
@@ -79,8 +92,10 @@ def generateData(nbData):
 
     #plt.scatter(absA,ordA,s=10,c='r',marker='*')
     #plt.scatter(absB,ordB,s=10,c='b',marker='o')
-    #plt.plot([-5,5],[5,-5],'orange')
+    #plt.plot([-10,10],[10,-10],'orange')
     #plt.show()
+
+
 
     trainingSet = A+B
 
@@ -141,7 +156,7 @@ def error(w,l,sample,sampleSize,hypPlace):
     for i in range(sampleSize):
         label = sample[i].get(-1,0)
         example = std.take_out_label(sample[i])
-        sum += max(0,1-label*(std.sparse_dot(w,example)))
+        sum += max(0,label*(1-std.sparse_dot(w,example)))
     cost = norm + sum
     return cost
 
@@ -188,7 +203,7 @@ def der_error(w,l,sample,sampleSize,hypPlace):
 
 
 
-def descent(data,w,numSamples,step,l,hypPlace):
+def descent(data,w,numSamples,l,hypPlace):
 
     # Sample of the data set.
     dataSample,sampleSize = sample(data,numSamples)
@@ -199,7 +214,7 @@ def descent(data,w,numSamples,step,l,hypPlace):
     # Modification of the parameter vector w.
     #w = std.sparse_vsous(w,std.sparse_mult(step,d))
 
-    return w
+    return d
 
 
 
