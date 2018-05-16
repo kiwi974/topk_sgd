@@ -12,8 +12,6 @@ import sgd
 import sparseToolsDict as std
 
 
-# We define here the number of samples we want for each training subset.
-numSamples = 2000
 
 hypPlace = 4
 
@@ -44,7 +42,10 @@ def guide_get_feature(stub):
     vect = stub.GetFeature(route_guide_pb2.Vector(poids="pret"))
 
     # We convert the set of data in the good format.
-    dataSampleSet = std.str2datadict(vect.poids)
+    data = vect.poids.split("<samples>")
+    dataSampleSet = std.str2datadict(data[0])
+    numSamples = int(data[1])
+
 
     # This second call serves to get the departure vector.
     vect = stub.GetFeature(route_guide_pb2.Vector(poids="getw0"))
@@ -52,8 +53,6 @@ def guide_get_feature(stub):
     vect.poids = info[0]
     step = float(info[1])
 
-    # The depreciation of the SVM norm cost
-    l = 0.5
 
     # Vector of the rests
     m = {}
@@ -63,7 +62,7 @@ def guide_get_feature(stub):
         print("iteration : " + str(it))
 
         # Gradient descent on the sample.
-        nw = sgd.descent(dataSampleSet, std.str2dict(vect.poids), numSamples, step, l, hypPlace)
+        nw = sgd.descent(dataSampleSet, std.str2dict(vect.poids), numSamples, step)
 
         # Updating of m
         stepedGradient = std.sparse_mult(step,nw)

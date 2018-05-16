@@ -112,7 +112,30 @@ def asynchronousUpdate(delayedParam,gradParam,param,l,step):
 
 
 
+# Merge for the SGD Topk version
+def mergeTopk(vectors):
+    merged = {}
+    count = {}
+    for l in vectors:
+        k = l[0]
+        v = l[1]
+        if (k in merged):
+            merged[k] += v
+        else:
+            merged[k] = v
+        if (k in count):
+            count[k] += 1
+        else:
+            count[k] = 1
+    merged = sparse_vdiv(merged,count)
+    return merged
 
+
+
+# Get the key of the biggest absolute value in a dictionary
+def infiniteNormInd(d):
+    maxkey = max(d, key = lambda y:abs(d[y]))
+    return maxkey
 
 
 
