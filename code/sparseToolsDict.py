@@ -272,7 +272,7 @@ def dataPreprocessing(data,hypPlace):
 
 ############## PRINT THE TRACE IN THE SERVER #################
 
-def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,w0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall,merged,mode,c1,c2):
+def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,w0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall,merged,mode,c1,c2,bytesTab):
     print('')
     print('############################################################')
     if (epoch == 0):
@@ -284,17 +284,32 @@ def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trai
             # Plot the error on the training and testing set
 
             figure = plt.figure(figsize=(10,10))
-            axes = figure.add_subplot(211)
+
+            # Error with respect to the number of epochs
+            axes = figure.add_subplot(221)
             axes.plot([i for i in range(len(testingErrors))], testingErrors, 'b', label="Error on testing set.")
             axes.plot([i for i in range(len(trainingErrors))], trainingErrors, 'r', label="Error on training set.")
-            axes.set_xlabel("Iteration.")
-            axes.set_ylabel("Error.")
-            axes.set_title("Learning curves.")
+            axes.set_xlabel("Epochs")
+            axes.set_ylabel("Error")
+            axes.set_title("Learning curves")
+            axes.legend()
+
+            # Plot the number of bytes sent by clients at every epoch on the same graph
+            axes = figure.add_subplot(222)
+            keys = []
+            values = []
+            for key, value in bytesTab.items():
+                keys.append(key)
+                values.append(value)
+            axes.plot(keys, values, 'g')
+            axes.set_xlabel("Epochs")
+            axes.set_ylabel("Number of bytes sent")
+            axes.set_title("Number of bytes sent by the clients to the server")
             axes.legend()
 
             # Plot the training set and the hyperplan
 
-            axes = figure.add_subplot(212)
+            axes = figure.add_subplot(223)
             axes.scatter(trainaA, trainoA, s=10, c='r', marker='*')
             axes.scatter(trainaB, trainoB, s=10, c='b', marker='o')
             axes.plot([-10, 10], [10, -10], 'orange', label="Theorical hyperplan")
@@ -303,8 +318,8 @@ def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trai
             b = paramVector.get(hypPlace, 0)
             i1 = (10 * w1 - b) / w2
             i2 = (-10 * w1 - b) / w2
-            axes.plot([-10,10], [i1, i2], 'crimson',label="Hyperplan coming from learning.")
-            axes.set_title("Points in the training data set with separators hyperplans.")
+            axes.plot([-10,10], [i1, i2], 'crimson',label="Hyperplan coming from learning")
+            axes.set_title("Points in the training data set with separators hyperplans")
             axes.legend(loc='upper right')
 
             # If "evolutione", print all the hyperplan that have been found during the learning.
@@ -314,7 +329,9 @@ def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trai
                     w02 = d.get(2,0)
                     w0b = d.get(hypPlace,0)
                     axes.plot([-10,10],[(10*w01-w0b)/w02,(-10*w01-w0b)/w02],'black')
+
             plt.show()
+
             print("We went out of the loop because : ")
             if (normDiff <= 10 ** (-2) * normPrecW):
                 print("     normDiff <= " + str(c1) + " * normPrecW")

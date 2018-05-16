@@ -66,7 +66,7 @@ nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
 
 
 # Maximum number of epochs we allow.
-nbMaxCall = 100
+nbMaxCall = 20
 
 # Constants to test the convergence
 c1 = 10**(-8)
@@ -102,14 +102,16 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         self.printerThreadName = ''
         # The final vector of parameters we find
         self.paramVector = {}
-        # Error on the training set, computed at each cycle of the server
-        self.trainingErrors = []
         # Error on the testing set, computed at each cycle of the server
         self.testingErrors = []
         # Step of the descent
-        self.step = 3
+        self.step = l
         # Keep all the merged vectors
         self.merged = [w0]
+        # Error on the training set, computed at each cycle of the server
+        self.trainingErrors = []
+        #Number of bytes send bu clients at each epoch
+        self.bytesTab = {}
 
 
 
@@ -123,7 +125,13 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         if (request.poids == "pret" or request.poids == "getw0"):
             self.vectors.append(request.poids)
         else:
-            kv = request.poids.split("<||>")
+            entry = request.poids.split("<bytes>")
+            b = int(entry[1])
+            if (self.epoch in self.bytesTab):
+                self.bytesTab[self.epoch] += b
+            else:
+                self.bytesTab[self.epoch] = b
+            kv = entry[0].split("<||>")
             self.vectors.append([float(kv[0]), float(kv[1])])
         self.enter_condition = (self.iterator == nbClients)
         waiting.wait(lambda : self.enter_condition)
@@ -181,7 +189,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ###################### PRINT OF THE CURRENT STATE ######################
         ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, self.normGradW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2)
+            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, self.normGradW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab)
             self.merged.append(self.oldParam)
             self.epoch += 1
             self.step *= 0.9

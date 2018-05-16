@@ -10,7 +10,7 @@ import route_guide_pb2_grpc
 
 import sgd
 import sparseToolsDict as std
-
+import sys
 
 
 hypPlace = 4
@@ -76,10 +76,10 @@ def guide_get_feature(stub):
         m[k] = 0
 
         # The result is sent to the server.
-        param2Modify = str(k) + "<||>" + str(g)
-        vect.poids = param2Modify
-
+        strVect = str(k) + "<||>" + str(g)
+        vect.poids = strVect + "<bytes>" + str(sys.getsizeof(strVect))
         vect = stub.GetFeature(route_guide_pb2.Vector(poids=vect.poids))
+
         if (vect.poids != 'stop'):
             info = vect.poids.split("<<||>>")
             vect.poids = info[0]

@@ -11,6 +11,7 @@ import route_guide_pb2_grpc
 
 import sgd
 import sparseToolsDict as std
+import sys
 
 
 
@@ -66,7 +67,8 @@ def guide_get_feature(stub):
         nw = sgd.descent(dataSampleSet, std.str2dict(vect.poids), numSamples, l)
 
         # The result is sent to the server.
-        vect.poids = std.dict2str(nw) + "<delay>" + std.dict2str(wt)
+        strVect = std.dict2str(nw)
+        vect.poids = strVect + "<bytes>" + str(sys.getsizeof(strVect))
         vect = stub.GetFeature(route_guide_pb2.Vector(poids=vect.poids))
 
         it += 1
