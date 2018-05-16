@@ -21,12 +21,7 @@ import math
 ########################################################################
 
 
-# d is the double of the distance of each point in the square to the
-# separator hyperplan.
-d = 2
 
-# u is a hyperplan's orthogonal vector.
-u = {1:1,2:1}
 
 def generateData(nbData):
 
@@ -38,7 +33,7 @@ def generateData(nbData):
     u = {1: 1, 2: 1}
     # d is the double of the distance of each point in the square to the
     # separator hyperplan.
-    d = 2
+    d = .1
 
     # u is a hyperplan's orthogonal vector.
     u = {1: 1, 2: 1}
@@ -103,7 +98,7 @@ def generateData(nbData):
 
 
 
-generateData(2000)
+#generateData(500)
 
 
 
@@ -150,7 +145,7 @@ def sample(set,numSamples):
 #       -cost : the cost computed on sample.
 ########################################################################
 
-def error(w,l,sample,sampleSize,hypPlace):
+def error(w,l,sample,sampleSize):
     norm =  l*std.sparse_dot(w,w)
     sum = 0
     for i in range(sampleSize):
@@ -175,14 +170,15 @@ def error(w,l,sample,sampleSize,hypPlace):
 #        sample.
 ########################################################################
 
-def der_error(w,l,sample,sampleSize,hypPlace):
+def der_error(w,l,sample,sampleSize):
     d = std.sparse_mult(l, w)
     sum = {}
     for i in range(sampleSize):
         label = sample[i].get(-1,0)
         example = std.take_out_label(sample[i])
-        if (label*(std.sparse_dot(w,example)) <= 1):
+        if (label*(std.sparse_dot(w,example)) < 1):
             sum = std.sparse_vsum(sum,std.sparse_mult(label,example))
+    #print("der_err summ part = " + str(sum))
     dcost = std.sparse_vsum(d,sum)
     return dcost
 
@@ -203,13 +199,13 @@ def der_error(w,l,sample,sampleSize,hypPlace):
 
 
 
-def descent(data,w,numSamples,l,hypPlace):
+def descent(data,w,numSamples,l):
 
     # Sample of the data set.
     dataSample,sampleSize = sample(data,numSamples)
 
     # Derivative of the cost evaluated on dataSample.
-    d = der_error(w,l,dataSample,sampleSize,hypPlace)
+    d = der_error(w,l,dataSample,sampleSize)
 
     # Modification of the parameter vector w.
     #w = std.sparse_vsous(w,std.sparse_mult(step,d))

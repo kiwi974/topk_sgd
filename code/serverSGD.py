@@ -16,7 +16,6 @@ import route_guide_pb2_grpc
 
 import threading
 
-import matplotlib.pyplot as plt
 
 import sgd
 import sparseToolsDict as std
@@ -28,12 +27,14 @@ _ONE_DAY_IN_SECONDS = 24*60*60
 nbClients = 2
 
 
-
 # Number of examples we want in our training set.
-nbExamples = 4000
+nbExamples = 50000
 
 # Total number of descriptors per example
 nbDescript = 2
+
+# Number of samples we want for each training subset client
+numSamples = 20000
 
 # Place of the constante 1 in each example : it
 # permits to include the hyperplan constant to the
@@ -45,8 +46,8 @@ hypPlace = nbDescript + 2
 trainingSet, trainaA,trainoA, trainaB, trainoB = sgd.generateData(nbExamples)
 trainingSet = std.dataPreprocessing(trainingSet,hypPlace)
 
-# Number of examples we want in our testing set.
-nbTestingData = 1600
+# Number of examples we want in our training set.
+nbTestingData = 50000
 
 # Set of generated data for testing.
 testingSet, testaA, testoA, testaB, testoB = sgd.generateData(nbTestingData)
@@ -57,20 +58,22 @@ testingSet = std.dataPreprocessing(testingSet,hypPlace)
 
 # Initial vector to process the stochastic gradient descent :
 # random generated.
-w0 = {1:1.21,2:1.75,hypPlace:0.011}                  #one element, to start the computation
-normGradW0 = math.sqrt(std.sparse_dot(w0,w0))
+w0 = {1:22.67,2:6.75,hypPlace:7.11}                  #one element, to start the computation
+normw0 = math.sqrt(std.sparse_dot(w0,w0))
 nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
 
 
 # Maximum number of epochs we allow.
-nbMaxCall = 100
+nbMaxCall = 5
 
 # The depreciation of the SVM norm cost
-l = 0.5
+l = 0.1
 
+# Constants to test the convergence
+c1 = 10**(-8)
+c2 = 10**(-8)
 
-
-
+print("Server ready.")
 
 class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
 
@@ -103,7 +106,9 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # Error on the testing set, computed at each cycle of the server
         self.testingErrors = []
         # Step of the descent
-        self.step = 1
+        self.step = 10
+        # Keep all the merged vectors
+        self.merged = [w0]
 
 
 
@@ -113,12 +118,11 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # Section 1 : wait for all the clients -> get their vectors and
         # appoint one of them as the printer.
 
-        global normGradW0
         self.iterator += 1
         if (request.poids == "pret" or request.poids == "getw0"):
             self.vectors.append(request.poids)
         else:
-            self.vectors.append(std.str2dict(request.poids))
+            self.vectors.append(std.str2dict(request.poids.split("<delay>")[0]))
         self.enter_condition = (self.iterator == nbClients)
         waiting.wait(lambda : self.enter_condition)
 
@@ -131,25 +135,28 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # all the vectors we got from the clients or the message 'stop' the
         # signal to the client that we converged.
 
-        normPrecW = 0
-        normGradW = 0
         normDiff = 0
-
+        normGradW = 0
+        normPrecW = 0
         if (request.poids == 'pret'):
-            vector = std.datadict2Sstr(trainingSet)
+            vector = std.datadict2Sstr(trainingSet) + "<depre>" + str(l) + "<samples>" + str(numSamples)
         elif (request.poids == 'getw0'):
             vector = std.dict2str(w0)
         else :
             gradParam = std.mergeSGD(self.vectors)
-            if (self.epoch == 2):
-                normGradW0 = math.sqrt(std.sparse_dot(gradParam,gradParam))
-            normGradW = math.sqrt(std.sparse_dot(gradParam, gradParam))
-            gradParam = std.sparse_mult(self.step,gradParam)
-            vector = std.sparse_vsous(self.oldParam,gradParam)
+            gradParam = std.sparse_mult(self.step, gradParam)
+            vector = std.sparse_vsous(self.oldParam, gradParam)
+
+            ######## NORMALIZATION OF THE VECTOR OF PARAMETERS #########
+            normW = math.sqrt(std.sparse_dot(vector,vector))
+            vector = std.sparse_mult(1./normW,vector)
+
+            ############################################################
             diff = std.sparse_vsous(self.oldParam,vector)
             normDiff = math.sqrt(std.sparse_dot(diff,diff))
-            normPrecW = math.sqrt(std.sparse_dot(self.oldParam,self.oldParam))
-            if ((normDiff <= 10 ** (-8) * normPrecW) or (self.epoch > nbMaxCall) or (normGradW <= 10**(-8)*normGradW0)):
+            normGradW = math.sqrt(std.sparse_dot(vector,vector))
+            normPrecW = math.sqrt(std.sparse_dot(self.oldParam, self.oldParam))
+            if ((normDiff <= c1*normPrecW) or (self.epoch > nbMaxCall) or (normGradW <= c2*normw0)):
                 self.paramVector = vector
                 vector = 'stop'
             else:
@@ -160,40 +167,38 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ######################################################################
         # Section 3 : wait that all the threads pass the computation area, and
         # store the new computed vector.
-                 
+
+        realComputation = (request.poids != 'pret') and (request.poids != 'getw0') and (vector != 'stop')
+
         self.iterator -= 1
 
         self.exit_condition = (self.iterator == 0)
         waiting.wait(lambda : self.exit_condition)
-
-        realComputation = (request.poids != 'pret') and (request.poids != 'getw0') and (vector != 'stop')
 
         if (realComputation):
             self.oldParam = std.str2dict(vector)
 
         ######################################################################
 
-        ###################### ONE THREAD ONLY SECTION  ######################
-
+        ###################### PRINT OF THE CURRENT STATE ######################
+        ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            # Printing of the trace
-            std.printTrace(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                trainaB, trainoA, trainoB,hypPlace, normDiff, normGradW, normPrecW, normGradW0, realComputation,                         self.oldParam, trainingSet,testingSet, nbTestingData, nbExamples, nbMaxCall)
-            # Modification of the epoch and of the step
+            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, normw0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2)
+            self.merged.append(self.oldParam)
             self.epoch += 1
-            self.step = self.step*0.99
-            print("step = " + str(self.step))
-        ############################### END OF PRINT ###########################
+            self.step *= 0.9
+            ############################### END OF PRINT ###########################
 
-        ######################################################################
 
-        ######################################################################
-        # Section 4 : empty the storage list of the vectors, and wait for all
-        # the threads.
 
-        self.vectors = []
-        waiting.wait(lambda : (self.vectors == []))
+            ######################################################################
+            # Section 4 : empty the storage list of the vectors, and wait for all
+            # the threads.
 
-        ######################################################################
+            self.vectors = []
+            waiting.wait(lambda : (self.vectors == []))
+
+            ######################################################################
 
         #time.sleep(1)
         return route_guide_pb2.Vector(poids=vector)

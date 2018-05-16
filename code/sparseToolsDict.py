@@ -50,12 +50,8 @@ def sparse_vsous(spVec1, spVec2):
 
 # u is divided by v componentwise
 def sparse_vdiv(spVec1, spVec2):
-    if (len(spVec1) != len(spVec2)):
-        print('You try to use sparse_vdiv with vectors of different sizes.')
-    else:
-        similar_keys = set(spVec1.keys()) & set(spVec2.keys())
-        div = {k: (spVec1[k] / spVec2[k]) for k in similar_keys}
-        return div
+    return {k: (val if k == -1 else val / spVec2.get(k, 1)) for k,val in spVec1.items()}
+
 
 
 # each component of u is multiplied by a
@@ -106,30 +102,18 @@ def mergeSGD(vectors):
 
 
 
-# Merge for the SGD Topk version
-def mergeTopk(vectors):
-    merged = {}
-    count = {}
-    for l in vectors:
-        k = l[0]
-        v = l[1]
-        if (k in merged):
-            merged[k] += v
-        else:
-            merged[k] = v
-        if (k in count):
-            count[k] += 1
-        else:
-            count[k] = 1
-    merged = sparse_vdiv(merged,count)
-    return merged
+# Update the vector of parameters according to the delay
+def asynchronousUpdate(delayedParam,gradParam,param,l,step):
+    diff = sparse_vsous(delayedParam,param)
+    secondOrder = sparse_mult(l,diff)
+    globalGrad = sparse_vsum(gradParam,secondOrder)
+    newParam = sparse_vsous(delayedParam,sparse_mult(step,globalGrad))
+    return newParam
 
 
 
-# Get the key of the biggest absolute value in a dictionary
-def infiniteNormInd(d):
-    maxkey = max(d, key = lambda y:abs(d[y]))
-    return maxkey
+
+
 
 
 ####################################################################
@@ -212,75 +196,60 @@ def str2datadict(strData):
 ####################################################################
 
 
+# compute average over a dataset
+def sparse_ave(data):
+    mean = {}
+    count = {}
+    for k in data:
+        label = take_out_label(k)
+        mean = sparse_vsum(k, mean)
+        for key in k.keys():
+            if (key != -1):
+                count[key] = count.get(key, 0) + 1
+    return sparse_vdiv(mean, count)
+
+
+def sparse_vsous2(spVec1, spVec2):
+    return {k: (val if k == -1 else val - spVec2.get(k, 0)) for k, val in spVec1.items()}
+
 
 # Process the treatment on the set data.
-
 def dataPreprocessing(data,hypPlace):
 
     n = len(data)
 
-    # Computation of the average for each variable in the example
-    moy = {}
-
-    for k in range(n):
-        example = take_out_label(data[k])
-        moy = sparse_vsum(moy,example)
-
-    def div(x):
-        return float(x)/n
-
-    moy = sparse_map(div,moy)
-
-
-    #print('')
-    #print("Le vecteur des moyennes est : " +str(moy))
-
-
+    # Computation of the mean
+    moy = sparse_ave(data)
+    #print('mean is Done')
 
     # Computation of the deviation
     sigma = {}
-
-    for k in range(n):
-
-        example = take_out_label(data[k])
-        dictDiff = sparse_vsous(example,moy)
-
-        def square(x):
-            return x*x
-
-        dictSquare = sparse_map(square,dictDiff)
-
-        sigma = sparse_vsum(dictSquare,sigma)
-
+    for k in data:
+        dictDiff = sparse_vsous(take_out_label(k), moy)
+        dictSquare = sparse_map(lambda x: x * x, dictDiff)
+        sigma = sparse_vsum(dictSquare, sigma)
 
     def sig(x):
-        return math.sqrt((1./n)*x)
+        return math.sqrt((1. / n) * x)
 
-    sigma = sparse_map(sig,sigma)
+    sigma = sparse_map(sig, sigma)
+    #print('Std dev is Done')
 
-    #print("Le vecteur des ecarts-types est : " + str(sigma))
-    #print('')
-
-
+    # standardisation
     for k in range(n):
-        label = data[k].get(-1,0)
-        example = take_out_label(data[k])
-        sous = sparse_vsous(example,moy)
-        treatedEx = sparse_vdiv(sous,sigma)
-        treatedEx[-1] = label
-        treatedEx[hypPlace] = -1
-        data[k] = treatedEx
+        #print('{}/{}'.format(k, n))
+        temp = sparse_vsous2(data[k], moy)
+        data[k] = sparse_vdiv(temp, sigma)
+        data[k][hypPlace] = 1
 
     return data
 
 
 
 
-
-
 ############## PRINT THE TRACE IN THE SERVER #################
 
-def printTrace(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall):
+def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,w0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall,merged,mode,c1,c2):
     print('')
     print('############################################################')
     if (epoch == 0):
@@ -289,37 +258,92 @@ def printTrace(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,tra
         print('# We performed the epoch : ' + str(epoch) + '.')
         if (vector == "stop"):
             print("# The vector that achieve the convergence is : " + str(paramVector))
-            # Plot the error on the training set
-            plt.figure(1)
-            plt.plot([i for i in range(epoch - 1)], testingErrors, 'b')
-            plt.plot([i for i in range(epoch - 1)], trainingErrors, 'r')
-            plt.show()
+            # Plot the error on the training and testing set
+
+            figure = plt.figure(figsize=(10,10))
+            axes = figure.add_subplot(211)
+            axes.plot([i for i in range(len(testingErrors))], testingErrors, 'b', label="Error on testing set.")
+            axes.plot([i for i in range(len(trainingErrors))], trainingErrors, 'r', label="Error on training set.")
+            axes.set_xlabel("Iteration.")
+            axes.set_ylabel("Error.")
+            axes.set_title("Learning curves.")
+            axes.legend()
+
             # Plot the training set and the hyperplan
-            plt.figure(2)
-            plt.scatter(trainaA, trainoA, s=10, c='r', marker='*')
-            plt.scatter(trainaB, trainoB, s=10, c='b', marker='o')
-            plt.plot([-5, 5], [5, -5], 'orange')
+
+            axes = figure.add_subplot(212)
+            axes.scatter(trainaA, trainoA, s=10, c='r', marker='*')
+            axes.scatter(trainaB, trainoB, s=10, c='b', marker='o')
+            axes.plot([-10, 10], [10, -10], 'orange', label="Theorical hyperplan")
             w1 = paramVector.get(1, 0)
             w2 = paramVector.get(2, 0)
             b = paramVector.get(hypPlace, 0)
-            i1 = (5 * w1 - b) / w2
-            i2 = (-5 * w1 - b) / w2
-            plt.plot([-5, 5], [i1, i2], 'crimson')
+            i1 = (10 * w1 - b) / w2
+            i2 = (-10 * w1 - b) / w2
+            axes.plot([-10,10], [i1, i2], 'crimson',label="Hyperplan coming from learning.")
+            axes.set_title("Points in the training data set with separators hyperplans.")
+            axes.legend(loc='upper right')
+
+            # If "evolutione", print all the hyperplan that have been found during the learning.
+            if (mode == "evolution"):
+                for d in merged:
+                    w01 = d.get(1,0)
+                    w02 = d.get(2,0)
+                    w0b = d.get(hypPlace,0)
+                    axes.plot([-10,10],[(10*w01-w0b)/w02,(-10*w01-w0b)/w02],'black')
             plt.show()
             print("We went out of the loop because : ")
-            if (normDiff <= 10 ** (-8) * normPrecW):
-                print("     normDiff <= 10 ** (-8) * normPrecW")
-            elif (normGradW <= 10 ** (-8) * normw0):
-                print("     normGradW <= 10 ** (-8) * normw0")
+            if (normDiff <= 10 ** (-2) * normPrecW):
+                print("     normDiff <= " + str(c1) + " * normPrecW")
+            elif (normGradW <= 10 ** (-2) * normw0):
+                print("     normGradW <= " + str(c2) + " * normw0")
             else:
                 print("     self.epoch > nbMaxCall")
         if (realComputation or (epoch == 1)):
             # Compute the error made with that vector of parameters on the testing set
-            testingErrors.append(sgd.error(oldParam, 0.1, testingSet, nbTestingData, hypPlace))
-            trainingErrors.append(sgd.error(oldParam, 0.1, trainingSet, nbExamples, hypPlace))
+            testingErrors.append(sgd.error(oldParam, 0.1, testingSet, nbTestingData))
+            trainingErrors.append(sgd.error(oldParam, 0.1, trainingSet, nbExamples))
             print('# The merged vector is : ' + vector + '.')
-        if (epoch == nbMaxCall):
-            print('We performed the maximum number of iterations.')
-            print('The descent has been stopped.')
+        #if (epoch == nbMaxCall ):
+            #print('We performed the maximum number of iterations.')
+            #print('The descent has been stopped.')
+        print('############################################################')
+        print('')
+
+
+
+
+def printTraceRecData(epoch,vector,paramVector,testingErrors,trainingErrors,normDiff,normGradW,normPrecW,normw0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,c1,c2):
+    print('')
+    print('############################################################')
+    if (epoch == 0):
+        print('# We sent the data to the clients.')
+    else:
+        print('# We performed the epoch : ' + str(epoch) + '.')
+        if (vector == "stop"):
+            #print("# The vector that achieve the convergence is : " + str(paramVector))
+            # Plot the error on the training and testing set
+
+            plt.figure(figsize=(10,10))
+            #plt.plot([i for i in range(len(testingErrors))], testingErrors, 'b', label="Error on testing set.")
+            plt.plot([i for i in range(len(trainingErrors))], trainingErrors, 'r', label="Error on training set.")
+            plt.xlabel("Iteration.")
+            plt.ylabel("Error.")
+            plt.title("Learning curves.")
+            plt.legend()
+            plt.show()
+
+            print("We went out of the loop because : ")
+            if (normDiff <= 10 ** (-2) * normPrecW):
+                print("     normDiff <= " + str(c1) + " * normPrecW")
+            elif (normGradW <= 10 ** (-2) * normw0):
+                print("     normGradW <= " + str(c2) + " * normw0")
+            else:
+                print("     self.epoch > nbMaxCall")
+        if (realComputation or (epoch == 1)):
+            # Compute the error made with that vector of parameters on the testing set
+            #testingErrors.append(sgd.error(oldParam, 0.1, testingSet, nbTestingData))
+            trainingErrors.append(sgd.error(oldParam, 0.1, trainingSet, nbExamples))
+            #print('# The merged vector is : ' + vector + '.')
         print('############################################################')
         print('')
