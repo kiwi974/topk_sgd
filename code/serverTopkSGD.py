@@ -53,14 +53,17 @@ nbTestingData = 5000
 testingSet, testaA, testoA, testaB, testoB = sgd.generateData(nbTestingData)
 testingSet = std.dataPreprocessing(testingSet,hypPlace)
 
-# Pre-processing of the data (normalisation and centration).
-#data = tools.dataPreprocessing(data)
+# Step of the gradient descent
+step = 1
+
+# The depreciation of the SVM norm cost
+l = 0.01
 
 # Initial vector to process the stochastic gradient descent :
 # random generated.
-l = 3
-w0 = {1:22.67,2:6.75,hypPlace:7.11}                  #one element, to start the computation
-normGWO = sgd.der_error(w0,l,trainingSet,nbExamples)
+w0 = {1:0.27,2:0.75,hypPlace:0.11}                  #one element, to start the computation
+gW0 = sgd.der_error(w0,l,trainingSet,nbExamples)
+normGW0 = math.sqrt(std.sparse_dot(gW0,gW0))
 nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
 
 
@@ -94,7 +97,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # The previous vecor of parameters : the last that had been sent.
         self.oldParam = w0
         # Norm of gradW0
-        self.normGradW0 = math.sqrt(std.sparse_dot(normGWO,normGWO))
+        self.normGW0 = math.sqrt(std.sparse_dot(gW0,gW0))
         # The name of one of the thread executing GetFeature : this one, and
         # only this one will something about the state of the computation in
         # the server.
@@ -163,7 +166,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             normDiff = math.sqrt(std.sparse_dot(diff, diff))
             normGradW = math.sqrt(std.sparse_dot(gradParam, gradParam))
             normPrecW = math.sqrt(std.sparse_dot(self.oldParam, self.oldParam))
-            if ((normDiff <= c1*normPrecW) or (self.epoch > nbMaxCall) or (normGradW <= c2*self.normGradW0)):
+            if ((normDiff <= c1*normPrecW) or (self.epoch > nbMaxCall) or (normGradW <= c2*self.normGW0)):
                 self.paramVector = vector
                 vector = 'stop'
             else:
@@ -191,7 +194,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ###################### PRINT OF THE CURRENT STATE ######################
         ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, self.normGradW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab)
+            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, self.normGW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab,l)
             self.merged.append(self.oldParam)
             self.epoch += 1
             self.step *= 0.9
