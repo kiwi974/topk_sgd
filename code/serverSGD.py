@@ -34,7 +34,7 @@ nbExamples = 50000
 nbDescript = 2
 
 # Number of samples we want for each training subset client
-numSamples = 20000
+numSamples = 10000
 
 # Place of the constante 1 in each example : it
 # permits to include the hyperplan constant to the
@@ -53,24 +53,25 @@ nbTestingData = 50000
 testingSet, testaA, testoA, testaB, testoB = sgd.generateData(nbTestingData)
 testingSet = std.dataPreprocessing(testingSet,hypPlace)
 
-# Pre-processing of the data (normalisation and centration).
-#data = tools.dataPreprocessing(data)
+# Step of the gradient descent
+step = 0.5
+
+# The depreciation of the SVM norm cost
+l = 0.001
 
 # Initial vector to process the stochastic gradient descent :
 # random generated.
-w0 = {1:22.67,2:6.75,hypPlace:7.11}                  #one element, to start the computation
-normw0 = math.sqrt(std.sparse_dot(w0,w0))
+w0 = {1:0.27,2:0.75,hypPlace:0.11}                  #one element, to start the computation
+gW0 = sgd.der_error(w0,l,trainingSet,nbExamples)
+normGW0 = math.sqrt(std.sparse_dot(gW0,gW0))
 nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
 
 
 # Maximum number of epochs we allow.
-nbMaxCall = 5
-
-# The depreciation of the SVM norm cost
-l = 0.1
+nbMaxCall = 50
 
 # Constants to test the convergence
-c1 = 10**(-8)
+c1 = 10**(-10)
 c2 = 10**(-8)
 
 print("Server ready.")
@@ -106,7 +107,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # Error on the testing set, computed at each cycle of the server
         self.testingErrors = []
         # Step of the descent
-        self.step = l
+        self.step = step
         # Keep all the merged vectors
         self.merged = [w0]
         # Number of bytes send bu clients at each epoch
@@ -162,7 +163,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             normDiff = math.sqrt(std.sparse_dot(diff,diff))
             normGradW = math.sqrt(std.sparse_dot(vector,vector))
             normPrecW = math.sqrt(std.sparse_dot(self.oldParam, self.oldParam))
-            if ((normDiff <= c1*normPrecW) or (self.epoch > nbMaxCall) or (normGradW <= c2*normw0)):
+            if ((self.epoch > nbMaxCall) or (normGradW <= c2*normGW0) or (normDiff <= c1*normPrecW)):
                 self.paramVector = vector
                 vector = 'stop'
             else:
@@ -189,7 +190,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ###################### PRINT OF THE CURRENT STATE ######################
         ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, normw0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab)
+            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, normGW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab)
             self.merged.append(self.oldParam)
             self.epoch += 1
             self.step *= 0.9

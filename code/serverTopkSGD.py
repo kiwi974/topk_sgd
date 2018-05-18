@@ -28,13 +28,13 @@ nbClients = 2
 
 
 # Number of examples we want in our training set.
-nbExamples = 10000
+nbExamples = 50000
 
 # Total number of descriptors per example
 nbDescript = 2
 
 # Number of samples we want for each training subset client
-numSamples = 7000
+numSamples = 20000
 
 # Place of the constante 1 in each example : it
 # permits to include the hyperplan constant to the
@@ -61,12 +61,11 @@ testingSet = std.dataPreprocessing(testingSet,hypPlace)
 l = 3
 w0 = {1:22.67,2:6.75,hypPlace:7.11}                  #one element, to start the computation
 normGWO = sgd.der_error(w0,l,trainingSet,nbExamples)
-print(normGWO)
 nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
 
 
 # Maximum number of epochs we allow.
-nbMaxCall = 20
+nbMaxCall = 100
 
 # Constants to test the convergence
 c1 = 10**(-8)
@@ -156,6 +155,9 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             # Modification of the vector of parameters
             gradParam = std.mergeTopk(self.vectors)
             vector = std.sparse_vsous(self.oldParam, gradParam)
+            # Normalization of the vector of parameters
+            normW = math.sqrt(std.sparse_dot(vector,vector))
+            vector = std.sparse_mult(1/normW,vector)
             # Checking of the stoping criterion
             diff = std.sparse_vsous(self.oldParam, vector)
             normDiff = math.sqrt(std.sparse_dot(diff, diff))
