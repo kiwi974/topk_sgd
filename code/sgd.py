@@ -146,12 +146,12 @@ def sample(set,numSamples):
 ########################################################################
 
 def error(w,l,sample,sampleSize):
-    norm =  l*std.sparse_dot(w,w)
+    norm = l*std.sparse_dot(w,w)
     sum = 0
     for i in range(sampleSize):
         label = sample[i].get(-1,0)
         example = std.take_out_label(sample[i])
-        sum += max(0,label*(1-std.sparse_dot(w,example)))
+        sum += max(0,1-label*std.sparse_dot(w,example))
     cost = norm + sum
     return cost
 

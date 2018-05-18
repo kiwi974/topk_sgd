@@ -54,10 +54,10 @@ testingSet, testaA, testoA, testaB, testoB = sgd.generateData(nbTestingData)
 testingSet = std.dataPreprocessing(testingSet,hypPlace)
 
 # Step of the gradient descent
-step = 0.5
+step = 1
 
 # The depreciation of the SVM norm cost
-l = 0.001
+l = 0.01
 
 # Initial vector to process the stochastic gradient descent :
 # random generated.
@@ -190,10 +190,19 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ###################### PRINT OF THE CURRENT STATE ######################
         ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, normGW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab)
+            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, normGW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab,l)
             self.merged.append(self.oldParam)
             self.epoch += 1
             self.step *= 0.9
+
+
+            dataTest = trainingSet[9]
+            label = dataTest.get(-1,0)
+            example = std.take_out_label(dataTest)
+            print("label = " + str(label))
+            print("SVM says = " + str(std.sparse_dot(self.oldParam,example)))
+
+
             ############################### END OF PRINT ###########################
 
 

@@ -272,7 +272,7 @@ def dataPreprocessing(data,hypPlace):
 
 ############## PRINT THE TRACE IN THE SERVER #################
 
-def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,w0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall,merged,mode,c1,c2,bytesTab):
+def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,w0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall,merged,mode,c1,c2,bytesTab,l):
     print('')
     print('############################################################')
     if (epoch == 0):
@@ -341,8 +341,8 @@ def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trai
                 print("     self.epoch > nbMaxCall")
         if (realComputation or (epoch == 1)):
             # Compute the error made with that vector of parameters on the testing set
-            testingErrors.append(sgd.error(oldParam, 0.1, testingSet, nbTestingData))
-            trainingErrors.append(sgd.error(oldParam, 0.1, trainingSet, nbExamples))
+            testingErrors.append(sgd.error(oldParam, l, testingSet, nbTestingData))
+            trainingErrors.append(sgd.error(oldParam, l, trainingSet, nbExamples))
             print('# The merged vector is : ' + vector + '.')
         #if (epoch == nbMaxCall ):
             #print('We performed the maximum number of iterations.')
