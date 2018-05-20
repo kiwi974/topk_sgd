@@ -10,11 +10,12 @@ import time
 import waiting
 
 import grpc
+import random
 import route_guide_pb2
 import route_guide_pb2_grpc
 
 import threading
-import pickle
+import timeit
 
 import sgd
 import sparseToolsDict as std
@@ -26,80 +27,54 @@ _ONE_DAY_IN_SECONDS = 24*60*60
 nbClients = 2
 
 
-# Place of the constante 1 in each example : it
-# permits to include the hyperplan constant to the
-# vector of parameters.
-
-hypPlace = 10**6
-
-
-# Importation of the data
-
-def treatData(data):
-    for i in range(len(data)):
-        if (data[i].get(-1,0) == [[1]]):
-            data[i][-1] = 1
-    return data
-
-print("Starting of the server...")
-
-with open('/home/kiwi974/cours/epfl/opti_ma/project/data/data6000new', 'rb') as f:
-    data = treatData(pickle.load(f))
-
 # Number of examples we want in our training set.
-nbExamples = 200
+nbExamples = 50000
 
-# Number of examples we want in our testing set.
-nbTestingData = 30
-
-print("Building of the training set...")
-
-# Define the training set.
-trainingSet = data[:nbExamples]
-
-print("Training data pre-processing...")
-
-trainingSet = std.dataPreprocessing(trainingSet,hypPlace)
-
-print("Building of the testing set...")
-
-# Define the testing set.
-testingSet = data[nbExamples:nbExamples+nbTestingData]
-
-print("Testing data pre-processing")
-
-testingSet = std.dataPreprocessing(testingSet, hypPlace)
+# Total number of descriptors per example
+nbDescript = 2
 
 # Number of samples we want for each training subset client
-numSamples = 20
+numSamples = 10000
+
+# Place of the constante 1 in each example : it
+# permits to include the hyperplan constant to the
+# vector of parameters
+
+hypPlace = nbDescript + 2
+
+# Set of generated data for training.
+trainingSet, trainaA,trainoA, trainaB, trainoB = sgd.generateData(nbExamples)
+trainingSet = std.dataPreprocessing(trainingSet,hypPlace)
+
+# Number of examples we want in our training set.
+nbTestingData = 50000
+
+# Set of generated data for testing.
+testingSet, testaA, testoA, testaB, testoB = sgd.generateData(nbTestingData)
+testingSet = std.dataPreprocessing(testingSet,hypPlace)
+
+# Step of the gradient descent
+step = 1
 
 # The depreciation of the SVM norm cost
 l = 0.01
 
-# The step of the descent
-step = 1
-
 # Initial vector to process the stochastic gradient descent :
 # random generated.
-w0 = {1: 0.21, 2: 0.75, hypPlace: 0.011}  # one element, to start the computation
+w0 = {1:0.27,2:0.75,hypPlace:0.11}                  #one element, to start the computation
 gW0 = sgd.der_error(w0,l,trainingSet,nbExamples)
 normGW0 = math.sqrt(std.sparse_dot(gW0,gW0))
-nbParameters = len(trainingSet[0]) - 1  # -1 because we don't count the label
+nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
+
 
 # Maximum number of epochs we allow.
-nbMaxCall = 400
-
-# Way to work
-way2work = "async"
-
-# The depreciation of the SVM norm cost
-l = 0.1
+nbMaxCall = 50
 
 # Constants to test the convergence
-c1 = 10**(-8)
+c1 = 10**(-10)
 c2 = 10**(-8)
 
-print("Server ready....")
+print("Server ready.")
 
 class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
 
@@ -215,7 +190,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ###################### PRINT OF THE CURRENT STATE ######################
         ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            std.printTraceRecData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, normDiff, normGradW, normPrecW, normGW0, realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples, c1, c2, l)
+            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, normGW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab,l)
             self.merged.append(self.oldParam)
             self.epoch += 1
             self.step *= 0.9

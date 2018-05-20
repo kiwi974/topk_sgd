@@ -133,10 +133,13 @@ def mergeTopk(vectors):
 
 
 # Get the key of the biggest absolute value in a dictionary
-def infiniteNormInd(d):
-    maxkey = max(d, key = lambda y:abs(d[y]))
-    return maxkey
-
+def infiniteNormInd(d,numCompo):
+    biggest = {}
+    for i in range(numCompo):
+        maxkey = max(d, key = lambda y:abs(d[y]))
+        biggest[maxkey] = d.get(maxkey,0)
+        del d[maxkey]
+    return biggest
 
 
 ####################################################################
@@ -353,7 +356,7 @@ def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trai
 
 
 
-def printTraceRecData(epoch,vector,paramVector,testingErrors,trainingErrors,normDiff,normGradW,normPrecW,normw0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,c1,c2):
+def printTraceRecData(epoch,vector,paramVector,testingErrors,trainingErrors,normDiff,normGradW,normPrecW,normw0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,c1,c2,l):
     print('')
     print('############################################################')
     if (epoch == 0):
@@ -382,8 +385,8 @@ def printTraceRecData(epoch,vector,paramVector,testingErrors,trainingErrors,norm
                 print("     self.epoch > nbMaxCall")
         if (realComputation or (epoch == 1)):
             # Compute the error made with that vector of parameters on the testing set
-            #testingErrors.append(sgd.error(oldParam, 0.1, testingSet, nbTestingData))
-            trainingErrors.append(sgd.error(oldParam, 0.1, trainingSet, nbExamples))
+            #testingErrors.append(sgd.error(oldParam, l, testingSet, nbTestingData))
+            trainingErrors.append(sgd.error(oldParam, l, trainingSet, nbExamples))
             #print('# The merged vector is : ' + vector + '.')
         print('############################################################')
         print('')

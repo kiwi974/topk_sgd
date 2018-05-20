@@ -44,7 +44,9 @@ def guide_get_feature(stub):
     # We convert the set of data in the good format.
     data = vect.poids.split("<samples>")
     dataSampleSet = std.str2datadict(data[0])
-    numSamples = int(data[1])
+    data2 = data[1].split("<#compo>")
+    numSamples = int(data2[0])
+    nbCompo = int(data2[1])
 
 
     # This second call serves to get the departure vector.
@@ -68,15 +70,11 @@ def guide_get_feature(stub):
         stepedGradient = std.sparse_mult(step,nw)
         m = std.sparse_vsum(m,stepedGradient)
 
-        # Select the biggest value in absolute value
-        k = std.infiniteNormInd(m)
-        g = m[k]
-
-        # Update of m
-        m[k] = 0
+        # Get the nbCompo biggest values in m, put it in g and remove them of m
+        g = std.infiniteNormInd(m,nbCompo)
 
         # The result is sent to the server.
-        strVect = str(k) + "<||>" + str(g)
+        strVect = std.dict2str(g)
         vect.poids = strVect + "<bytes>" + str(sys.getsizeof(strVect))
         vect = stub.GetFeature(route_guide_pb2.Vector(poids=vect.poids))
 

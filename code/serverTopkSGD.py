@@ -10,7 +10,7 @@ import time
 import waiting
 
 import grpc
-import random
+import pickle
 import route_guide_pb2
 import route_guide_pb2_grpc
 
@@ -27,54 +27,81 @@ _ONE_DAY_IN_SECONDS = 24*60*60
 nbClients = 2
 
 
-# Number of examples we want in our training set.
-nbExamples = 50000
-
-# Total number of descriptors per example
-nbDescript = 2
-
-# Number of samples we want for each training subset client
-numSamples = 20000
-
 # Place of the constante 1 in each example : it
 # permits to include the hyperplan constant to the
-# vector of parameters
+# vector of parameters.
 
-hypPlace = nbDescript + 2
+hypPlace = 10**6
 
-# Set of generated data for training.
-trainingSet, trainaA,trainoA, trainaB, trainoB = sgd.generateData(nbExamples)
-trainingSet = std.dataPreprocessing(trainingSet,hypPlace)
+
+# Importation of the data
+
+def treatData(data):
+    for i in range(len(data)):
+        if (data[i].get(-1,0) == [[1]]):
+            data[i][-1] = 1
+    return data
+
+print("Starting of the server...")
+
+with open('/home/kiwi974/cours/epfl/opti_ma/project/sparseData/data6000new', 'rb') as f:
+    data = treatData(pickle.load(f))
 
 # Number of examples we want in our training set.
-nbTestingData = 5000
+nbExamples = 2000
 
-# Set of generated data for testing.
-testingSet, testaA, testoA, testaB, testoB = sgd.generateData(nbTestingData)
-testingSet = std.dataPreprocessing(testingSet,hypPlace)
+# Number of examples we want in our testing set.
+nbTestingData = 30
 
-# Step of the gradient descent
-step = 1
+print("Building of the training set...")
+
+# Define the training set.
+trainingSet = data[:nbExamples]
+
+print("Training data pre-processing...")
+
+trainingSet = std.dataPreprocessing(trainingSet,hypPlace)
+
+print("Building of the testing set...")
+
+# Define the testing set.
+testingSet = data[nbExamples:nbExamples+nbTestingData]
+
+print("Testing data pre-processing")
+
+testingSet = std.dataPreprocessing(testingSet, hypPlace)
+
+# Number of samples we want for each training subset client
+numSamples = 100
 
 # The depreciation of the SVM norm cost
 l = 0.01
 
+# The step of the descent
+step = 1
+
 # Initial vector to process the stochastic gradient descent :
 # random generated.
-w0 = {1:0.27,2:0.75,hypPlace:0.11}                  #one element, to start the computation
+w0 = {1: 0.21, 2: 0.75, hypPlace: 0.011}  # one element, to start the computation
 gW0 = sgd.der_error(w0,l,trainingSet,nbExamples)
 normGW0 = math.sqrt(std.sparse_dot(gW0,gW0))
-nbParameters = len(trainingSet[0])-1  #-1 because we don't count the label
-
+nbParameters = len(trainingSet[0]) - 1  # -1 because we don't count the label
 
 # Maximum number of epochs we allow.
 nbMaxCall = 100
+
+# Number of components we choose to keep in the topk
+nbCompo = 10
+
+# The depreciation of the SVM norm cost
+l = 0.1
 
 # Constants to test the convergence
 c1 = 10**(-8)
 c2 = 10**(-8)
 
-print("Server ready.")
+print("Server ready....")
+
 
 class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
 
@@ -133,8 +160,8 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
                 self.bytesTab[self.epoch] += b
             else:
                 self.bytesTab[self.epoch] = b
-            kv = entry[0].split("<||>")
-            self.vectors.append([float(kv[0]), float(kv[1])])
+            v = std.str2dict(entry[0])
+            self.vectors.append(v)
         self.enter_condition = (self.iterator == nbClients)
         waiting.wait(lambda : self.enter_condition)
 
@@ -151,12 +178,12 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         normGradW = 0
         normPrecW = 0
         if (request.poids == 'pret'):
-            vector = std.datadict2Sstr(trainingSet) + "<samples>" + str(numSamples)
+            vector = std.datadict2Sstr(trainingSet) + "<samples>" + str(numSamples) + "<#compo>" + str(nbCompo)
         elif (request.poids == 'getw0'):
             vector = std.dict2str(w0) + "<<||>>" + str(self.step)
         else :
             # Modification of the vector of parameters
-            gradParam = std.mergeTopk(self.vectors)
+            gradParam = std.mergeSGD(self.vectors)
             vector = std.sparse_vsous(self.oldParam, gradParam)
             # Normalization of the vector of parameters
             normW = math.sqrt(std.sparse_dot(vector,vector))
@@ -194,7 +221,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ###################### PRINT OF THE CURRENT STATE ######################
         ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            std.printTraceGenData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, trainaA,                               trainaB, trainoA,trainoB, hypPlace, normDiff, normGradW, normPrecW, self.normGW0, w0,                                         realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples,                                   nbMaxCall,self.merged,"",c1,c2,self.bytesTab,l)
+            std.printTraceRecData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, normDiff, normGradW, normPrecW, normGW0, realComputation, self.oldParam, trainingSet, testingSet, nbTestingData, nbExamples, c1, c2, l)
             self.merged.append(self.oldParam)
             self.epoch += 1
             self.step *= 0.9
