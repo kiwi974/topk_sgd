@@ -43,11 +43,20 @@ def treatData(data):
 
 print("Starting of the server...")
 
-with open('/home/kiwi974/cours/epfl/opti_ma/project/data/data6000new', 'rb') as f:
-    data = treatData(pickle.load(f))
+dataType = "dense"
+
+if (dataType == "dense"):
+    path = '/home/kiwi974/cours/epfl/opti_ma/project/denseData/voice.csv'
+    data = std.buildCSV2Database(path)
+else:
+    with open('/home/kiwi974/cours/epfl/opti_ma/project/sparseData/data6000new', 'rb') as f:
+        data = treatData(pickle.load(f))
 
 # Number of examples we want in our training set.
 nbExamples = 200
+
+# Number of samples we want for each training subset client
+numSamples = 20
 
 # Number of examples we want in our testing set.
 nbTestingData = 30
@@ -70,9 +79,6 @@ print("Testing data pre-processing")
 
 testingSet = std.dataPreprocessing(testingSet, hypPlace)
 
-# Number of samples we want for each training subset client
-numSamples = 20
-
 # The depreciation of the SVM norm cost
 l = 0.01
 
@@ -87,10 +93,8 @@ normGW0 = math.sqrt(std.sparse_dot(gW0,gW0))
 nbParameters = len(trainingSet[0]) - 1  # -1 because we don't count the label
 
 # Maximum number of epochs we allow.
-nbMaxCall = 400
+nbMaxCall = 100
 
-# Way to work
-way2work = "async"
 
 # The depreciation of the SVM norm cost
 l = 0.1

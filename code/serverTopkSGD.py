@@ -42,13 +42,38 @@ def treatData(data):
             data[i][-1] = 1
     return data
 
+
+dataType = "sparse"
+
+if (dataType == "dense"):
+    path = '/home/kiwi974/cours/epfl/opti_ma/project/denseData/voice.csv'
+    data = std.buildCSV2Database(path)
+    # Number of examples we want in our training set.
+    nbExamples = 3160
+    # Number of samples we want for each training subset client
+    numSamples = 500
+    # File path where record training erros
+    filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkresult.txt'
+    # Total number of descriptors per example
+    nbDesc = 19
+else:
+    with open('/home/kiwi974/cours/epfl/opti_ma/project/sparseData/data6000new', 'rb') as f:
+        data = treatData(pickle.load(f))
+        # Number of examples we want in our training set.
+        nbExamples = 2000
+        # Number of samples we want for each training subset client
+        numSamples = 300
+        # File path where record training erros
+        filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseTopKresult.txt'
+        # Total number of descriptors per example
+        nbDesc = 47236
+
 print("Starting of the server...")
 
-with open('/home/kiwi974/cours/epfl/opti_ma/project/sparseData/data6000new', 'rb') as f:
-    data = treatData(pickle.load(f))
 
-# Number of examples we want in our training set.
-nbExamples = 2000
+
+# Number of components we choose to keep in the topk
+nbCompo = 200
 
 # Number of examples we want in our testing set.
 nbTestingData = 30
@@ -71,9 +96,6 @@ print("Testing data pre-processing")
 
 testingSet = std.dataPreprocessing(testingSet, hypPlace)
 
-# Number of samples we want for each training subset client
-numSamples = 100
-
 # The depreciation of the SVM norm cost
 l = 0.01
 
@@ -88,10 +110,7 @@ normGW0 = math.sqrt(std.sparse_dot(gW0,gW0))
 nbParameters = len(trainingSet[0]) - 1  # -1 because we don't count the label
 
 # Maximum number of epochs we allow.
-nbMaxCall = 100
-
-# Number of components we choose to keep in the topk
-nbCompo = 10
+nbMaxCall = 1000
 
 # The depreciation of the SVM norm cost
 l = 0.1
@@ -221,10 +240,10 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ###################### PRINT OF THE CURRENT STATE ######################
         ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            std.printTraceRecData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, normDiff, normGradW, normPrecW, normGW0, realComputation, self.oldParam, trainingSet, testingSet, nbTestingData, nbExamples, c1, c2, l)
+            std.printTraceRecData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, normDiff, normGradW, normPrecW, normGW0, realComputation, self.oldParam, trainingSet, testingSet, nbTestingData, nbExamples, c1, c2, l, nbCompo, filePath)
             self.merged.append(self.oldParam)
             self.epoch += 1
-            self.step *= 0.9
+            self.step *= std.stepSize(nbExamples,self.epoch,nbDesc,1)
             ############################### END OF PRINT ###########################
 
 

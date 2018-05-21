@@ -5,6 +5,7 @@
 import math
 import matplotlib.pyplot as plt
 import sgd
+import csv
 
 
 ########################################################################
@@ -132,7 +133,8 @@ def mergeTopk(vectors):
 
 
 
-# Get the key of the biggest absolute value in a dictionary
+# Get the key of the biggest absolute value in a
+
 def infiniteNormInd(d,numCompo):
     biggest = {}
     for i in range(numCompo):
@@ -140,6 +142,14 @@ def infiniteNormInd(d,numCompo):
         biggest[maxkey] = d.get(maxkey,0)
         del d[maxkey]
     return biggest
+
+
+
+
+# Compute the step size (learning rate) for the topKSGD
+
+def stepSize(numExampes, it, nbDesc, k):
+    return 2*numExampes/(it + 10*(nbDesc/k))
 
 
 ####################################################################
@@ -207,11 +217,26 @@ def str2datadict(strData):
 
 
 
+####################################################################
+# Create a list of dictionnaries database from a csv file.
+####################################################################
 
-
-
-
-
+def buildCSV2Database(path):
+    reader = csv.reader(open(path, 'r'))
+    data = []
+    numRow = 0
+    for row in reader:
+        if (numRow != 0):
+            dict = {}
+            for k in range(1,20):
+                dict[k] = float(row[k])
+            if (row[20] == 'female'):
+                dict[-1] = -1
+            elif (row[20] == 'male'):
+                dict[-1] = 1
+            data.append(dict)
+        numRow += 1
+    return data
 
 
 
@@ -356,7 +381,7 @@ def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trai
 
 
 
-def printTraceRecData(epoch,vector,paramVector,testingErrors,trainingErrors,normDiff,normGradW,normPrecW,normw0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,c1,c2,l):
+def printTraceRecData(epoch,vector,paramVector,testingErrors,trainingErrors,normDiff,normGradW,normPrecW,normw0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,c1,c2,l,nbCompo, filePath):
     print('')
     print('############################################################')
     if (epoch == 0):
@@ -375,6 +400,11 @@ def printTraceRecData(epoch,vector,paramVector,testingErrors,trainingErrors,norm
             plt.title("Learning curves.")
             plt.legend()
             plt.show()
+
+            # Record the results in a file
+            fichier = open(filePath, 'a')
+            fichier.write(str(nbCompo) + "<nbCompo>" + str(trainingErrors) + "\n")
+            fichier.close()
 
             print("We went out of the loop because : ")
             if (normDiff <= 10 ** (-2) * normPrecW):
