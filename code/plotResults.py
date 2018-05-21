@@ -39,11 +39,8 @@ plt.figure(figsize=(10,10))
 
 splitComp = 30
 
-print(len(errorsTab[0][splitComp:]))
-
 for i in range(len(components)):
     plt.plot([k+splitComp for k in range(len(errorsTab[i])-splitComp)], errorsTab[i][splitComp:], colors[i], label="Error for "+str(components[i])+" components choose in topk.")
-    print("ploted")
 plt.xlabel("Iteration.")
 plt.ylabel("Error.")
 plt.title("Learning curves for the dense set of voice recognition, with step *= 0.9.")

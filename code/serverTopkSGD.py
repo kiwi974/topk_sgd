@@ -51,7 +51,7 @@ if (dataType == "dense"):
     # Number of examples we want in our training set.
     nbExamples = 3160
     # Number of samples we want for each training subset client
-    numSamples = 500
+    numSamples = 50
     # File path where record training erros
     filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkresult.txt'
     # Total number of descriptors per example
@@ -73,7 +73,7 @@ print("Starting of the server...")
 
 
 # Number of components we choose to keep in the topk
-nbCompo = 200
+nbCompo = 20
 
 # Number of examples we want in our testing set.
 nbTestingData = 30
