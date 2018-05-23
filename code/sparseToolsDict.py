@@ -300,7 +300,7 @@ def dataPreprocessing(data,hypPlace):
 
 ############## PRINT THE TRACE IN THE SERVER #################
 
-def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,w0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall,merged,mode,c1,c2,bytesTab,l):
+def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trainaA,trainaB,trainoA,trainoB,hypPlace,normDiff,normGradW,normPrecW,normw0,w0,realComputation,oldParam,trainingSet,testingSet,nbTestingData,nbExamples,nbMaxCall,merged,mode,c1,c2,l,nbCompo, filePath):
     print('')
     print('############################################################')
     if (epoch == 0):
@@ -314,7 +314,7 @@ def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trai
             figure = plt.figure(figsize=(10,10))
 
             # Error with respect to the number of epochs
-            axes = figure.add_subplot(221)
+            axes = figure.add_subplot(211)
             axes.plot([i for i in range(len(testingErrors))], testingErrors, 'b', label="Error on testing set.")
             axes.plot([i for i in range(len(trainingErrors))], trainingErrors, 'r', label="Error on training set.")
             axes.set_xlabel("Epochs")
@@ -323,21 +323,21 @@ def printTraceGenData(epoch,vector,paramVector,testingErrors,trainingErrors,trai
             axes.legend()
 
             # Plot the number of bytes sent by clients at every epoch on the same graph
-            axes = figure.add_subplot(222)
-            keys = []
-            values = []
-            for key, value in bytesTab.items():
-                keys.append(key)
-                values.append(value)
-            axes.plot(keys, values, 'g')
-            axes.set_xlabel("Epochs")
-            axes.set_ylabel("Number of bytes sent")
-            axes.set_title("Number of bytes sent by the clients to the server")
-            axes.legend()
+            #axes = figure.add_subplot(222)
+            #keys = []
+            #values = []
+            #for key, value in bytesTab.items():
+            #   keys.append(key)
+            #   values.append(value)
+            #axes.plot(keys, values, 'g')
+            #axes.set_xlabel("Epochs")
+            #axes.set_ylabel("Number of bytes sent")
+            #axes.set_title("Number of bytes sent by the clients to the server")
+            #axes.legend()
 
             # Plot the training set and the hyperplan
 
-            axes = figure.add_subplot(223)
+            axes = figure.add_subplot(212)
             axes.scatter(trainaA, trainoA, s=10, c='r', marker='*')
             axes.scatter(trainaB, trainoB, s=10, c='b', marker='o')
             axes.plot([-10, 10], [10, -10], 'orange', label="Theorical hyperplan")

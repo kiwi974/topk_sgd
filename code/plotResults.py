@@ -2,10 +2,46 @@ import matplotlib.pyplot as plt
 
 # Plot the training errors located in a file
 
-sparsePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseTopKresult.txt'
-densePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/topkresult.txt'
 
-filePath = densePath
+
+################# PARAMETERS ON WHICH YOU CAN ACT TO PLOT #################
+
+### Chose the representation you want
+# 1 : dense with step multiplied by 0.9 at every server iteration
+# 2 : dense with step coming from the paper and a = d/k
+# 3 : dense with step coming from the paper and a = 10*d/k
+# 4 : sparse with step coming from the paper and a = 10*d/k
+sparsity = 1
+
+
+
+
+
+###########################################################################
+
+
+
+
+
+dense09StepPath = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkStep09.txt'
+densePaperStepPath = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkRightStep.txt'
+densePaperStepD10Path = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkRightStepDividedby10.txt'
+
+sparsePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseTopKresult.txt'
+
+
+if (sparsity == 1):
+    filePath = dense09StepPath
+elif (sparsity == 2):
+    filePath = densePaperStepD10Path
+elif (sparsity == 3):
+    filePath = densePaperStepPath
+else:
+    filePath = sparsePath
+
+
+
+############### OPENING OF THE FILES AND PREPARATION ##############
 
 file = open(filePath, 'r')
 
@@ -33,16 +69,46 @@ file.close()
 
 # Plot data
 
-colors = ['firebrick', 'darkorange', 'rebeccapurple', 'gold', 'darkgreen', 'dodgerblue', 'magenta']
+colors = ['firebrick', 'darkorange', 'rebeccapurple', 'gold', 'darkgreen', 'dodgerblue', 'magenta','brown']
 
-plt.figure(figsize=(10,10))
+n = len(components)
 
-splitComp = 30
+###################################################################
 
-for i in range(len(components)):
-    plt.plot([k+splitComp for k in range(len(errorsTab[i])-splitComp)], errorsTab[i][splitComp:], colors[i], label="Error for "+str(components[i])+" components choose in topk.")
-plt.xlabel("Iteration.")
-plt.ylabel("Error.")
-plt.title("Learning curves for the dense set of voice recognition, with step *= 0.9.")
-plt.legend()
+
+if (filePath == dense09StepPath):
+    figure = plt.figure(figsize=(10, 10))
+    splitComp = 30
+    plt.plot([k + splitComp for k in range(len(errorsTab[n - 1]) - splitComp)], errorsTab[n - 1][splitComp:],colors[n - 1], label="Error for classic SGD (all components).")
+    for i in range(n-1):
+        plt.plot([k+splitComp for k in range(len(errorsTab[i])-splitComp)], errorsTab[i][splitComp:], colors[i], label="Error for "+str(components[i])+" components choose in topk.")
+        plt.xlabel("Server iterations.")
+        plt.ylabel("Error")
+        plt.title("Dense data : learning rate multiplied by 0.9 at each server iteration.")
+        plt.legend()
+
+
+
+
+elif (sparsity == 2):
+    for i in range(n):
+        figure = plt.figure(figsize=(15, 5))
+        plt.plot([k for k in range(len(errorsTab[i]))], errorsTab[i], colors[i], label="Error for "+str(components[i])+" components choose in topk.")
+        plt.xlabel("Server iterations.")
+        plt.ylabel("Error")
+        plt.title("Dense data : paper learning rate with a = d/k.")
+        plt.legend()
+
+
+
+elif (sparsity == 3):
+    for i in range(n):
+        figure = plt.figure(figsize=(15, 5))
+        plt.plot([k for k in range(len(errorsTab[i]))], errorsTab[i], colors[i], label="Error for "+str(components[i])+" components choose in topk.")
+        plt.xlabel("Server iterations.")
+        plt.ylabel("Error")
+        plt.title("Dense data : paper learning rate with a = 10*d/k.")
+        plt.legend()
+
+
 plt.show()

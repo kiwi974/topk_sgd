@@ -43,7 +43,7 @@ def treatData(data):
     return data
 
 
-dataType = "sparse"
+dataType = "dense"
 
 if (dataType == "dense"):
     path = '/home/kiwi974/cours/epfl/opti_ma/project/denseData/voice.csv'
@@ -53,7 +53,7 @@ if (dataType == "dense"):
     # Number of samples we want for each training subset client
     numSamples = 50
     # File path where record training erros
-    filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkresult.txt'
+    filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkStep09.txt'
     # Total number of descriptors per example
     nbDesc = 19
 else:
@@ -62,17 +62,15 @@ else:
         # Number of examples we want in our training set.
         nbExamples = 2000
         # Number of samples we want for each training subset client
-        numSamples = 300
+        numSamples = 200
         # File path where record training erros
-        filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseTopKresult.txt'
+        filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseTopk.txt'
         # Total number of descriptors per example
         nbDesc = 47236
 
 print("Starting of the server...")
 
-
-
-# Number of components we choose to keep in the topk
+# Number of components we select in topK
 nbCompo = 20
 
 # Number of examples we want in our testing set.
@@ -112,9 +110,6 @@ nbParameters = len(trainingSet[0]) - 1  # -1 because we don't count the label
 # Maximum number of epochs we allow.
 nbMaxCall = 1000
 
-# The depreciation of the SVM norm cost
-l = 0.1
-
 # Constants to test the convergence
 c1 = 10**(-8)
 c2 = 10**(-8)
@@ -153,7 +148,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         # Error on the testing set, computed at each cycle of the server
         self.testingErrors = []
         # Step of the descent
-        self.step = l
+        self.step = step
         # Keep all the merged vectors
         self.merged = [w0]
         # Error on the training set, computed at each cycle of the server
@@ -243,10 +238,14 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             std.printTraceRecData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, normDiff, normGradW, normPrecW, normGW0, realComputation, self.oldParam, trainingSet, testingSet, nbTestingData, nbExamples, c1, c2, l, nbCompo, filePath)
             self.merged.append(self.oldParam)
             self.epoch += 1
-            self.step *= std.stepSize(nbExamples,self.epoch,nbDesc,1)
+            self.step *= 0.9 #std.stepSize(nbExamples, self.epoch, nbDesc/10, nbCompo)
             ############################### END OF PRINT ###########################
 
-
+            dataTest = trainingSet[9]
+            label = dataTest.get(-1, 0)
+            example = std.take_out_label(dataTest)
+            print("label = " + str(label))
+            print("SVM says = " + str(std.sparse_dot(self.oldParam, example)))
 
             ######################################################################
             # Section 4 : empty the storage list of the vectors, and wait for all
