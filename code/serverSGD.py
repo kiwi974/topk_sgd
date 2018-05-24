@@ -64,7 +64,7 @@ else:
         # Number of samples we want for each training subset client
         numSamples = 300
         # File path where record training erros
-        filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseGoodStep.txt'
+        filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparse09Step.txt'
         # Total number of descriptors per example
         nbDesc = 47236
 
@@ -225,10 +225,10 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         ###################### PRINT OF THE CURRENT STATE ######################
         ##################### AND DO CRITICAL MODIFICATIONS ####################
         if (threading.current_thread().name == self.printerThreadName):
-            std.printTraceRecData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, normDiff, normGradW, normPrecW, normGW0, realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples, c1, c2, l, 0, filePath)
+            std.printTraceRecData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, normDiff, normGradW, normPrecW, normGW0, realComputation, self.oldParam,trainingSet, testingSet, nbTestingData, nbExamples, c1, c2, l, nbDesc, filePath)
             self.merged.append(self.oldParam)
             self.epoch += 1
-            self.step *= 0.9
+            self.step *= 0.9  #std.stepSize(nbExamples, self.epoch, nbDesc, nbDesc)
 
 
             dataTest = trainingSet[9]

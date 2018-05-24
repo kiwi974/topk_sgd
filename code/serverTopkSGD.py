@@ -43,7 +43,7 @@ def treatData(data):
     return data
 
 
-dataType = "dense"
+dataType = "sparse"
 
 if (dataType == "dense"):
     path = '/home/kiwi974/cours/epfl/opti_ma/project/denseData/voice.csv'
@@ -64,14 +64,14 @@ else:
         # Number of samples we want for each training subset client
         numSamples = 200
         # File path where record training erros
-        filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseTopk.txt'
+        filePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseTopK09Step.txt'
         # Total number of descriptors per example
         nbDesc = 47236
 
 print("Starting of the server...")
 
 # Number of components we select in topK
-nbCompo = 20
+nbCompo = 30
 
 # Number of examples we want in our testing set.
 nbTestingData = 30
@@ -238,7 +238,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             std.printTraceRecData(self.epoch, vector, self.paramVector, self.testingErrors, self.trainingErrors, normDiff, normGradW, normPrecW, normGW0, realComputation, self.oldParam, trainingSet, testingSet, nbTestingData, nbExamples, c1, c2, l, nbCompo, filePath)
             self.merged.append(self.oldParam)
             self.epoch += 1
-            self.step *= 0.9 #std.stepSize(nbExamples, self.epoch, nbDesc/10, nbCompo)
+            self.step *= 0.9 #std.stepSize(nbExamples, self.epoch, nbDesc, nbCompo)
             ############################### END OF PRINT ###########################
 
             dataTest = trainingSet[9]

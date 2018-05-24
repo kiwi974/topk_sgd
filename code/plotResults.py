@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 
 ################# PARAMETERS ON WHICH YOU CAN ACT TO PLOT #################
 
-### Chose the representation you want
-# 1 : dense with step multiplied by 0.9 at every server iteration
-# 2 : dense with step coming from the paper and a = d/k
-# 3 : dense with step coming from the paper and a = 10*d/k
-# 4 : sparse with step coming from the paper and a = 10*d/k
-sparsity = 1
+choice = 0
+
+while ( (choice != 1) & (choice != 2) & (choice != 3) & (choice != 4) & (choice != 5)):
+    print( "Chose what you want to see : \n 1 : dense with step multiplied by 0.9 at every server iteration \n 2 : dense with step coming from the paper and a = d/k \n 3 : dense with step coming from the paper and a = 10*d/k \n 4 : sparse with step coming from the paper and a = 10*d/k  \n 5 : sparse with step multiplied by 0.9 at every server iteration")
+    choice = input()
 
 
 
@@ -23,22 +22,26 @@ sparsity = 1
 
 
 
-dense09StepPath = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkStep09.txt'
-densePaperStepPath = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkRightStep.txt'
-densePaperStepD10Path = '/home/kiwi974/cours/epfl/opti_ma/project/code/denseTopkRightStepDividedby10.txt'
+dense09StepPath = '/home/kiwi974/cours/epfl/opti_ma/project/code/data/denseTopkStep09.txt'
+densePaperStepPath = '/home/kiwi974/cours/epfl/opti_ma/project/code/data/denseTopkRightStep.txt'
+densePaperStepD10Path = '/home/kiwi974/cours/epfl/opti_ma/project/code/data/denseTopkRightStepDividedby10.txt'
+sparseRightStep = '/home/kiwi974/cours/epfl/opti_ma/project/code/data/sparseRightStep.txt'
+sparse09Step = '/home/kiwi974/cours/epfl/opti_ma/project/code/data/sparse09Step.txt'
 
-sparsePath = '/home/kiwi974/cours/epfl/opti_ma/project/code/sparseTopKresult.txt'
 
 
-if (sparsity == 1):
+if (choice == 1):
     filePath = dense09StepPath
-elif (sparsity == 2):
+elif (choice == 2):
     filePath = densePaperStepD10Path
-elif (sparsity == 3):
+elif (choice == 3):
     filePath = densePaperStepPath
+elif (choice == 4):
+    filePath = sparseRightStep
+elif (choice == 5):
+    filePath = sparse09Step
 else:
-    filePath = sparsePath
-
+    print("This choice is not valid.")
 
 
 ############### OPENING OF THE FILES AND PREPARATION ##############
@@ -79,9 +82,9 @@ n = len(components)
 if (filePath == dense09StepPath):
     figure = plt.figure(figsize=(10, 10))
     splitComp = 30
-    plt.plot([k + splitComp for k in range(len(errorsTab[n - 1]) - splitComp)], errorsTab[n - 1][splitComp:],colors[n - 1], label="Error for classic SGD (all components).")
+    plt.plot([k + splitComp for k in range(len(errorsTab[n - 1]) - splitComp)], errorsTab[n - 1][splitComp:],colors[n - 1], label="Error for classic SGD (all components, " + str(len(errorsTab[n-1])) + " iterations).")
     for i in range(n-1):
-        plt.plot([k+splitComp for k in range(len(errorsTab[i])-splitComp)], errorsTab[i][splitComp:], colors[i], label="Error for "+str(components[i])+" components choose in topk.")
+        plt.plot([k+splitComp for k in range(len(errorsTab[i])-splitComp)], errorsTab[i][splitComp:], colors[i], label="Error for "+str(components[i])+" components chosen in topk (" + str(len(errorsTab[i])) + " iterations).")
         plt.xlabel("Server iterations.")
         plt.ylabel("Error")
         plt.title("Dense data : learning rate multiplied by 0.9 at each server iteration.")
@@ -90,10 +93,10 @@ if (filePath == dense09StepPath):
 
 
 
-elif (sparsity == 2):
+elif (filePath == densePaperStepD10Path):
     for i in range(n):
         figure = plt.figure(figsize=(15, 5))
-        plt.plot([k for k in range(len(errorsTab[i]))], errorsTab[i], colors[i], label="Error for "+str(components[i])+" components choose in topk.")
+        plt.plot([k for k in range(len(errorsTab[i]))], errorsTab[i], colors[i], label="Error for "+str(components[i])+" components chosen in topk (" + str(len(errorsTab[i])) + " iterations).")
         plt.xlabel("Server iterations.")
         plt.ylabel("Error")
         plt.title("Dense data : paper learning rate with a = d/k.")
@@ -101,13 +104,35 @@ elif (sparsity == 2):
 
 
 
-elif (sparsity == 3):
+elif (filePath == densePaperStepPath):
     for i in range(n):
         figure = plt.figure(figsize=(15, 5))
-        plt.plot([k for k in range(len(errorsTab[i]))], errorsTab[i], colors[i], label="Error for "+str(components[i])+" components choose in topk.")
+        plt.plot([k for k in range(len(errorsTab[i]))], errorsTab[i], colors[i], label="Error for "+str(components[i])+" components chosen in topk (" + str(len(errorsTab[i])) + " iterations).")
         plt.xlabel("Server iterations.")
         plt.ylabel("Error")
         plt.title("Dense data : paper learning rate with a = 10*d/k.")
+        plt.legend()
+
+elif (filePath == sparseRightStep):
+    figure = plt.figure(figsize=(10, 10))
+    plt.plot([k for k in range(len(errorsTab[n - 1]))], errorsTab[n - 1],colors[n - 1], label="Error for classic SGD (all components, " + str(len(errorsTab[n - 1])) + " iterations).")
+    for i in range(n-1):
+        plt.plot([k for k in range(len(errorsTab[i]))], errorsTab[i], colors[i], label="Error for "+str(components[i])+" components chosen in topk (" + str(len(errorsTab[i])) + " iterations).")
+        plt.xlabel("Server iterations.")
+        plt.ylabel("Error")
+        plt.title("Sparse data : paper learning rate with a = 10*d/k.")
+        plt.legend()
+
+
+elif (filePath == sparse09Step):
+    figure = plt.figure(figsize=(10, 10))
+    plt.plot([k for k in range(len(errorsTab[n - 1]))], errorsTab[n - 1], colors[n - 1],
+             label="Error for classic SGD (all components, " + str(len(errorsTab[n - 1])) + " iterations).")
+    for i in range(n-1):
+        plt.plot([k for k in range(len(errorsTab[i]))], errorsTab[i], colors[i], label="Error for "+str(components[i])+" components chosen in topk (" + str(len(errorsTab[i])) + " iterations).")
+        plt.xlabel("Server iterations.")
+        plt.ylabel("Error")
+        plt.title("Sparse data : learning rate multiplied by 0.9 at each server iteration.")
         plt.legend()
 
 
