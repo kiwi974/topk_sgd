@@ -43,9 +43,10 @@ def treatData(data):
     return data
 
 
-dataType = "sparse"
+print("On which type of data would you like to run : \n      1: dense \n      2: sparse")
+dataType = int(input())
 
-if (dataType == "dense"):
+if (dataType == 1):
     path = '/home/kiwi974/cours/epfl/opti_ma/project/denseData/voice.csv'
     data = std.buildCSV2Database(path)
     # Number of examples we want in our training set.
@@ -70,8 +71,9 @@ else:
 
 print("Starting of the server...")
 
-# Number of components we select in topK
-nbCompo = 30
+# Number of components we select in
+print("Tell me ho many components you would like to keep during the topk running (!! warning : this number can't exceed the total number of descriptors of each example) !!")
+nbCompo = input()
 
 # Number of examples we want in our testing set.
 nbTestingData = 30

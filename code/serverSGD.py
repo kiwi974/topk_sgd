@@ -41,11 +41,13 @@ def treatData(data):
             data[i][-1] = 1
     return data
 
+
+print("On which type of data would you like to run : \n      1: dense \n      2: sparse")
+dataType = int(input())
+
 print("Starting of the server...")
 
-dataType = "sparse"
-
-if (dataType == "dense"):
+if (dataType == 1):
     path = '/home/kiwi974/cours/epfl/opti_ma/project/denseData/voice.csv'
     data = std.buildCSV2Database(path)
     # Number of examples we want in our training set.
